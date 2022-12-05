@@ -1,18 +1,28 @@
 package main
 
 import (
+	"unicode"
 	"fmt"
 
 	aoc "github.com/DenizBaskan/Aoc-Helper"
 )
 
-var (
-	stackTableHeight int = 8
-	stackTableWidth int = 9
-)
-
 func partOne(input []string) string {
 	var stacks = make(map[int][]string)
+
+	var stackTableHeight, stackTableWidth int 
+
+	for ; stackTableHeight < len(input); stackTableHeight++ {
+		if input[stackTableHeight][1] == '1' {
+			break
+		}
+	}
+
+	for _, v := range input[stackTableHeight] {
+		if unicode.IsDigit(v) {
+			stackTableWidth++
+		}
+	}
 
 	for i := 1; i < stackTableWidth + 1; i++ {
 		var stack []string
@@ -55,6 +65,20 @@ func partOne(input []string) string {
 
 func partTwo(input []string) string {
 	var stacks = make(map[int][]string)
+
+	var stackTableHeight, stackTableWidth int 
+
+	for ; stackTableHeight < len(input); stackTableHeight++ {
+		if input[stackTableHeight][1] == '1' {
+			break
+		}
+	}
+
+	for _, v := range input[stackTableHeight] {
+		if unicode.IsDigit(v) {
+			stackTableWidth++
+		}
+	}
 
 	for i := 1; i < stackTableWidth + 1; i++ {
 		var stack []string
@@ -109,7 +133,7 @@ func main() {
 	}
 		
 	inputLines := input.Strings()
-	
+
 	fmt.Printf("Part one: %s\n", partOne(inputLines))
 	fmt.Printf("Part two: %s\n", partTwo(inputLines))
 }

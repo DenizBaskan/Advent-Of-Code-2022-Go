@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math/rand"
 	"strconv"
 	"strings"
 	"sort"
@@ -10,65 +9,46 @@ import (
 	aoc "github.com/DenizBaskan/Aoc-Helper"
 )
 
-type File struct {
-	Size       int
-	ParentUUID int64
-	UUID       int64     
-	Contents   map[string]File
-}
-
-func recursivelyGetTotal(dir File, sum *int) {
-	for _, f := range dir.Contents {
-		if f.UUID != 0 {
-			recursivelyGetTotal(f, sum)
-		} else {
-			*sum += f.Size
-		}
-	}
-}
-
 func partOne(input []string) int {
-	currentDir := File{Size: 0, ParentUUID: 0, UUID: 99999999 - rand.Int63n(90000000), Contents: make(map[string]File)}
-	rootDir := &currentDir
+	files := make(map[string]*int)
+	files["/"] = nil
+	currentDir := "/"
 
-	dirs := []File{currentDir}
-	
 	for _, line := range input {
 		if line[2] == 'l' && line[3] == 's' {
 			continue
 		} else if line[2] == 'c' && line[3] == 'd' {
 			if line[5] == '.' && line[6] == '.' {
-				for _, dir := range dirs {
-					if dir.UUID == currentDir.ParentUUID {
-						currentDir = dir
-					}
-				}
+				currentDir = currentDir[:strings.LastIndex(currentDir[:len(currentDir) - 2], "/")] + "/"
 			} else if line[5] == '/' {
-				currentDir = *rootDir
+				currentDir = "/"
 			} else {
-				currentDir = currentDir.Contents[line[5:]]
+				currentDir += line[5:] + "/"
 			}
 		} else if line[0] == 'd' && line[1] == 'i' && line[2] == 'r' {
-			newDir := File{Size: 0, ParentUUID: currentDir.UUID, UUID: 99999999 - rand.Int63n(90000000), Contents: make(map[string]File)}
-			currentDir.Contents[line[4:]] = newDir
-			dirs = append(dirs, newDir)
+			files[currentDir + line[4:]] = nil
 		} else {
 			size, name := strings.Split(line, " ")[0], strings.Split(line, " ")[1]
-			intSize, err := strconv.Atoi(size)
-			if err != nil {
-				panic(err)
-			}
-			currentDir.Contents[name] = File{Size: intSize, ParentUUID: 0, UUID: 0, Contents: nil}
+			intSize, _ := strconv.Atoi(size)
+			files[currentDir + name] = &intSize
 		}
 	}
 
 	var sum int
 
-	for _, dir := range dirs {
-		var dirTotal int
-		recursivelyGetTotal(dir, &dirTotal)
-		if dirTotal <= 100000 {
-			sum += dirTotal
+	for name1, size1 := range files {
+		if size1 == nil {
+			var sizeOfDir int
+
+			for name2, size2 := range files {
+				if len(name2) >= len(name1) && name2[:len(name1)] == name1 && size2 != nil {
+					sizeOfDir += *size2
+				}
+			}
+
+			if sizeOfDir <= 100000 {
+				sum += sizeOfDir
+			}
 		}
 	}
 
@@ -76,59 +56,55 @@ func partOne(input []string) int {
 }
 
 func partTwo(input []string) int {
-	currentDir := File{Size: 0, ParentUUID: 0, UUID: 99999999 - rand.Int63n(90000000), Contents: make(map[string]File)}
-	rootDir := &currentDir
+	files := make(map[string]*int)
+	files["/"] = nil
+	currentDir := "/"
 
-	dirs := []File{currentDir}
-	
 	for _, line := range input {
 		if line[2] == 'l' && line[3] == 's' {
 			continue
 		} else if line[2] == 'c' && line[3] == 'd' {
 			if line[5] == '.' && line[6] == '.' {
-				for _, dir := range dirs {
-					if dir.UUID == currentDir.ParentUUID {
-						currentDir = dir
-					}
-				}
+				currentDir = currentDir[:strings.LastIndex(currentDir[:len(currentDir) - 2], "/")] + "/"
 			} else if line[5] == '/' {
-				currentDir = *rootDir
+				currentDir = "/"
 			} else {
-				currentDir = currentDir.Contents[line[5:]]
+				currentDir += line[5:] + "/"
 			}
 		} else if line[0] == 'd' && line[1] == 'i' && line[2] == 'r' {
-			newDir := File{Size: 0, ParentUUID: currentDir.UUID, UUID: 99999999 - rand.Int63n(90000000), Contents: make(map[string]File)}
-			currentDir.Contents[line[4:]] = newDir
-			dirs = append(dirs, newDir)
+			files[currentDir + line[4:]] = nil
 		} else {
 			size, name := strings.Split(line, " ")[0], strings.Split(line, " ")[1]
-			intSize, err := strconv.Atoi(size)
-			if err != nil {
-				panic(err)
+			intSize, _ := strconv.Atoi(size)
+			files[currentDir + name] = &intSize
+		}
+	}
+
+	var total int
+
+	for _, size := range files {
+		if size != nil {
+			total += *size
+		}
+	}
+
+	amountToPurge := 30000000 - (70000000 - total)
+
+	var possibleAmounts []int
+
+	for name1, size1 := range files {
+		if size1 == nil {
+			var sizeOfDir int
+
+			for name2, size2 := range files {
+				if len(name2) >= len(name1) && name2[:len(name1)] == name1 && size2 != nil {
+					sizeOfDir += *size2
+				}
 			}
-			currentDir.Contents[name] = File{Size: intSize, ParentUUID: 0, UUID: 0, Contents: nil}
-		}
-	}
 
-	var amounts []int
-	var rootTotal int
-
-	for _, dir := range dirs {
-		var dirTotal int
-		recursivelyGetTotal(dir, &dirTotal)
-		amounts = append(amounts, dirTotal)
-		if dirTotal > rootTotal {
-			rootTotal = dirTotal
-		}
-	}
-
-	var amountToFree = 30000000 - (70000000 - rootTotal)
-
-	var possibleAmounts []int 
-
-	for _, amount := range amounts {
-		if amount >= amountToFree {
-			possibleAmounts = append(possibleAmounts, amount)
+			if sizeOfDir >= amountToPurge {
+				possibleAmounts = append(possibleAmounts, sizeOfDir)
+			}
 		}
 	}
 
@@ -151,7 +127,7 @@ func main() {
 	}
 		
 	inputLines := input.Strings()
-
+	
 	fmt.Printf("Part one: %d\n", partOne(inputLines))
 	fmt.Printf("Part two: %d\n", partTwo(inputLines))
 }
